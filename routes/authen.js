@@ -60,15 +60,30 @@ router.post("/login", async function (req, res, next) {
   let password = req.body.password;
 
   const [data, field] = await pool.query(
-    "SELECT * FROM users WHERE email = ?",
-    [email]
+    "SELECT * FROM users WHERE email = ? AND password = ?",
+    [email, password]
   );
-  if (data[0] == undefined && data[0].password != password) {
+  if (data[0] == undefined) {
     return res.json("error");
   } else {
     return res.json(data[0].id);
   }
 });
+
+router.post("/user", async function (req, res, next) {
+  let id = req.body.user_id;
+  const [data, field] = await pool.query(
+    "SELECT * FROM users WHERE id = ?",
+    [id]
+    );
+
+  if (data[0] == undefined) {
+    return res.json("error");
+  } else {
+    return res.json(data[0]);
+  }
+});
+
 
 router.post("/editprofile_noimg", async function (req, res, next) {
   let id = req.body.user_id
