@@ -29,10 +29,12 @@ router.post("/signup/account", async function (req, res, next) {
   let firstname = req.body.firstname;
   let lastname = req.body.lastname;
   let email = req.body.email;
+  let tel = req.body.tel;
+  let location = req.body.location;
   let password1 = req.body.password1;
   let password2 = req.body.password2;
   let img = "/uploads/profile.jpeg";
-  let role = "guest";
+  let role = "Volunteer";
   if (password1 != password2) {
     alert("Password do not match");
   } else {
@@ -40,8 +42,8 @@ router.post("/signup/account", async function (req, res, next) {
     await conn.beginTransaction();
     try {
       const user = await conn.query(
-        "INSERT INTO users(firstname, lastname, email, password, img, role) VALUES(?, ?, ?, ?, ?, ?)",
-        [firstname, lastname, email, password1, img, role]
+        "INSERT INTO users(firstname, lastname, email, password, tel, location, img, role) VALUES(?, ?, ?, ?, ?, ?, ?, ?)",
+        [firstname, lastname, email, password1, tel, location, img, role]
       );
       await conn.commit();
       res.json("success");
@@ -100,6 +102,21 @@ router.post("/editprofile_noimg", async function (req, res, next) {
     res.json(error)
   }
 });
+
+router.post("/addInterest", async function (req, res, next) {
+  let id = req.body.user_id
+  let interest = req.body.interest;
+  try {
+    const [data, field] = await pool.query(
+      "UPDATE users SET interest = ? WHERE id = ?",
+      [JSON.stringify(interest), id]
+    );
+    res.json("success")
+  } catch (error) {
+    res.json(error)
+  }
+});
+
 router.post(
   "/editprofile_img",
   upload.array("img_profile", 1),

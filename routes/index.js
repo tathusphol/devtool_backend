@@ -23,23 +23,22 @@ const upload = multer({ storage: storage });
 
 router.post(
   "/activity",
-  upload.array("img_activity", 1),
+  upload.single("img_activity"),
   async function (req, res, next) {
-    const file = req.files;
+    const file = req.file;
     let topic = req.body.topic;
     let description = req.body.description;
     let start = req.body.start;
     let stop = req.body.stop;
+    let min = req.body.min;
+    let max = req.body.max;
+    let goal = req.body.goal;
     let position = req.body.position;
-    let path;
-    file.forEach((file, index) => {
-      path = file.path.substring(6);
-    });
-    console.log(path);
-
+    let path = file.path.substring(6); 
+  
     const [data, field] = await pool.query(
-      "INSERT INTO activity(topic, description, start, stop, position, img) VALUES(?, ?, ?, ?, ?, ?)",
-      [topic, description, start, stop, position, path]
+      "INSERT INTO activity(topic, description, start, stop, min, max, goal, position, img) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      [topic, description, start, stop, min, max, goal, position, path]
     );
 
     return res.json("success");
@@ -56,6 +55,9 @@ router.post(
     let description = req.body.description;
     let start = req.body.start;
     let stop = req.body.stop;
+    let min = req.body.min;
+    let max = req.body.max;
+    let goal = req.body.goal;
     let position = req.body.position;
     let path;
     file.forEach((file, index) => {
@@ -64,8 +66,8 @@ router.post(
     console.log(path);
 
     const [data, field] = await pool.query(
-      "UPDATE activity SET topic = ?, description = ?, start = ?, stop = ?, position = ?, img = ? WHERE a_id = ?",
-      [topic, description, start, stop, position, path, a_id]
+      "UPDATE activity SET topic = ?, description = ?, start = ?, stop = ?, min = ?, max =?, goal = ?, position = ?, img = ? WHERE a_id = ?",
+      [topic, description, start, stop, min, max, goal, position, path, a_id]
     );
     return res.json("success");
   }
@@ -78,19 +80,36 @@ router.post("/update_activity_noimg", async function (req, res, next) {
   let description = req.body.description;
   let start = req.body.start;
   let stop = req.body.stop;
+  let min = req.body.min;
+  let max = req.body.max;
+  let goal = req.body.goal;
   let position = req.body.position;
   const [data, field] = await pool.query(
-    "UPDATE activity SET topic = ?, description = ?, start = ?, stop = ?, position = ? WHERE a_id = ?",
-    [topic, description, start, stop, position, a_id]
+    "UPDATE activity SET topic = ?, description = ?, start = ?, stop = ?,  min = ?, max =?, goal = ?, position = ? WHERE a_id = ?",
+    [topic, description, start, stop, min, max, goal, position, a_id]
   );
 
   return res.json("success");
 });
 
 router.get("/activity", async function (req, res, next) {
-  const [data, field] = await pool.query("SELECT * FROM activity");
+  const [data, field] = await pool.query("SELECT * FROM activity WHERE status != ?", ["stop"]);
 
   return res.json(data);
+});
+
+router.get("/activityall", async function (req, res, next) {
+  const [data, field] = await pool.query("SELECT * FROM activity ");
+
+  return res.json(data);
+});
+
+router.post("/selectactivity", async function (req, res, next) {
+  const [data, field] = await pool.query("SELECT * FROM activity WHERE a_id = ?", [
+    req.body.a_id
+  ]);
+
+  return res.json(data[0]);
 });
 
 router.post("/select/activity", async function (req, res, next) {
@@ -103,6 +122,43 @@ router.post("/select/activity", async function (req, res, next) {
     ]);
   
     return res.json("success");
+  } catch (error) {
+    res.json(error)
+  }
+});
+
+router.post("/end/activity", async function (req, res, next) {
+  let activity_id = req.body.a_id;
+
+  try {
+    const [data, field] = await pool.query("UPDATE activity SET status = ? WHERE a_id = ?", [
+      "stop", activity_id
+    ]);
+  
+    return res.json("success");
+  } catch (error) {
+    res.json(error)
+  }
+});
+
+router.post("/my_activity", async function (req, res, next) {
+  try {
+    const [data, field] = await pool.query("SELECT a_id FROM user_activity WHERE u_id = ?", [
+      req.body.u_id
+    ]);
+    return res.json(data);
+  } catch (error) {
+    res.json(error)
+  }
+});
+
+router.post("/myadmin_activity", async function (req, res, next) {
+  try {
+    const [data, field] = await pool.query("SELECT * FROM activity WHERE u_id = ? AND status != ?", [
+      req.body.u_id, "stop"
+    ]);
+    console.log(data)
+    return res.json(data);
   } catch (error) {
     res.json(error)
   }
